@@ -4,10 +4,15 @@ import obstacle
 from alien import Alien, Extra
 from random import choice, randint
 from laser import Laser
+import numpy as np
  
 class Game:
 	def __init__(self):
 		# Player setup
+
+		self.screen_width = screen_width
+		self.screen_height = screen_height
+
 		player_sprite = Player((screen_width / 2,screen_height),screen_width,5)
 		self.player = pygame.sprite.GroupSingle(player_sprite)
 
@@ -18,13 +23,14 @@ class Game:
 		self.score = 0
 		self.font = pygame.font.Font('../font/Pixeled.ttf',20)
 
+########################################################
 		# Obstacle setup
-		self.shape = obstacle.shape
-		self.block_size = 6
-		self.blocks = pygame.sprite.Group()
-		self.obstacle_amount = 4
-		self.obstacle_x_positions = [num * (screen_width / self.obstacle_amount) for num in range(self.obstacle_amount)]
-		self.create_multiple_obstacles(*self.obstacle_x_positions, x_start = screen_width / 15, y_start = 480)
+		# self.shape = obstacle.shape
+		# self.block_size = 6
+		# self.blocks = pygame.sprite.Group()
+		# self.obstacle_amount = 4
+		# self.obstacle_x_positions = [num * (screen_width / self.obstacle_amount) for num in range(self.obstacle_amount)]
+		# self.create_multiple_obstacles(*self.obstacle_x_positions, x_start = screen_width / 15, y_start = 480)
 
 		# Alien setup
 		self.aliens = pygame.sprite.Group()
@@ -102,9 +108,11 @@ class Game:
 		# player lasers 
 		if self.player.sprite.lasers:
 			for laser in self.player.sprite.lasers:
+
+##########################################
 				# obstacle collisions
-				if pygame.sprite.spritecollide(laser,self.blocks,True):
-					laser.kill()
+				# if pygame.sprite.spritecollide(laser,self.blocks,True):
+				# 	laser.kill()
 					
 
 				# alien collisions
@@ -123,13 +131,18 @@ class Game:
 		# alien lasers 
 		if self.alien_lasers:
 			for laser in self.alien_lasers:
+
+##########################################
 				# obstacle collisions
-				if pygame.sprite.spritecollide(laser,self.blocks,True):
-					laser.kill()
+				# if pygame.sprite.spritecollide(laser,self.blocks,True):
+				# 	laser.kill()
 
 				if pygame.sprite.spritecollide(laser,self.player,False):
 					laser.kill()
 					self.lives -= 1
+
+					self.score -= 700
+
 					if self.lives <= 0:
 						pygame.quit()
 						sys.exit()
@@ -137,7 +150,8 @@ class Game:
 		# aliens
 		if self.aliens:
 			for alien in self.aliens:
-				pygame.sprite.spritecollide(alien,self.blocks,True)
+##########################################
+				# pygame.sprite.spritecollide(alien,self.blocks,True)
 
 				if pygame.sprite.spritecollide(alien,self.player,False):
 					pygame.quit()
@@ -171,13 +185,102 @@ class Game:
 		
 		self.player.sprite.lasers.draw(screen)
 		self.player.draw(screen)
-		self.blocks.draw(screen)
+
+##########################################
+		# self.blocks.draw(screen)
+
 		self.aliens.draw(screen)
 		self.alien_lasers.draw(screen)
 		self.extra.draw(screen)
 		self.display_lives()
 		self.display_score()
 		self.victory_message()
+
+
+
+	def get_state(self):
+			"""
+			A state is defined as the concatenation of :
+			- for each of the 48 aliens, alien_position - player_position
+			- for each of the 3 lowest lasers, laser_position - player_position
+			- aliens direction : 0 if aliens are going to the left, 1 if aliens are going to the 
+			
+			Positions are normalized by screen sizes.
+
+			If there are less than 48 remaining aliens or less than 3 existing lasers, the state is filled with [1, 1] for each missing alien/laser.
+			"""
+			state = []
+
+			# "Aliens related" state
+			aliens_sorted = self.aliens.sprites()
+			for alien in reversed(aliens_sorted):
+				dx = (alien.rect.centerx - self.player.sprite.rect.centerx) / self.screen_width
+				dy = - (alien.rect.centery - self.player.sprite.rect.centery) / self.screen_height - 0.25
+				state.extend([np.round(dx,decimals=3), np.round(dy,decimals=3)])
+			while len(aliens_sorted) < 48:
+				state.extend([1,1])
+				aliens_sorted.append(None)
+
+			# "Lasers related" state
+			lasers_sorted = sorted(self.alien_lasers.sprites(), key=lambda l: l.rect.bottom, reverse=True)[:3]
+			for laser in lasers_sorted:
+				dx = (laser.rect.centerx - self.player.sprite.rect.centerx) / self.screen_width
+				dy = - (laser.rect.centery - self.player.sprite.rect.centery) / self.screen_height -0.25
+				state.extend([np.round(dx,decimals=3), np.round(dy,decimals=3)])
+			while len(lasers_sorted) < 3:
+				state.extend([1,1])
+				lasers_sorted.append(None)
+			
+			# "aliens direction" state
+			state.append((1 + self.alien_direction)/2)
+			
+			return state
+
+	# def get_state(self):
+	# 	"""
+	# 	A state is defined as the concatenation of :
+	# 	- for each of the 48 aliens, alien_position - player_position
+	# 	- for each of the 3 lowest lasers, laser_position - player_position
+	# 	- aliens direction : 0 if aliens are going to the left, 1 if aliens are going to the 
+		
+	# 	Positions are normalized by screen sizes.
+
+	# 	If there are less than 48 remaining aliens or less than 3 existing lasers, the state is filled with [1, 1] for each missing alien/laser.
+	# 	"""
+	# 	state = []
+
+
+	# 	x=self.player.sprite.rect.centerx/ self.screen_width -0.5
+	# 	y=self.player.sprite.rect.centery/ self.screen_height +0.5
+	# 	state.append([np.round(x,decimals=3), np.round(y,decimals=3)])
+
+
+	# 	# lasers_list=[]
+	# 	lasers_sorted = sorted(self.alien_lasers.sprites(), key=lambda l: l.rect.bottom, reverse=True)[:3]
+	# 	for laser in lasers_sorted:
+	# 		x = laser.rect.centerx / self.screen_width -0.5
+	# 		y = -laser.rect.centery / self.screen_height +0.5
+	# 		state.extend([np.round(x,decimals=3), np.round(y,decimals=3)])
+	# 	while len(lasers_sorted) < 3:
+	# 		state.extend([1,1])
+	# 		lasers_sorted.append(None)
+
+
+	# 	# "aliens direction" state
+	# 	state.append( self.alien_direction)
+
+	# 	aliens_sorted = self.aliens.sprites()
+
+	# 	for alien in reversed(aliens_sorted):
+	# 		x = alien.rect.centerx / self.screen_width - 0.5
+	# 		y = - alien.rect.centery / self.screen_height + 0.5
+	# 		state.extend([np.round(x,decimals=3), np.round(y,decimals=3)])
+	# 	while len(aliens_sorted) < 48:
+	# 		state.extend([1,1])
+	# 		aliens_sorted.append(None)
+
+			
+	# 	return state
 
 class CRT:
 	def __init__(self):
@@ -218,6 +321,9 @@ if __name__ == '__main__':
 
 		screen.fill((30,30,30))
 		game.run()
+
+		state=game.get_state()
+		print("state",state)
 		#crt.draw()
 			
 		pygame.display.flip()
