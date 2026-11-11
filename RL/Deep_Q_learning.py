@@ -64,8 +64,8 @@ class Agent_DQN():
 
     def make_nn_structure(self):
         n_in=self.env.observation_space.shape[0]
-        n_h1=100
-        n_h2=100
+        n_h1=200
+        n_h2=200
         n_out=self.env.action_space.n
 
         self.main_network = nn.Sequential(
@@ -84,19 +84,19 @@ class Agent_DQN():
 
 
     def normalize_state(self,state):
-        min_state=np.array(self.env.observation_space.low)
-        max_state=np.array(self.env.observation_space.high)
-        state=np.array(state)
+        # min_state=np.array(self.env.observation_space.low)
+        # max_state=np.array(self.env.observation_space.high)
+        # state=np.array(state)
 
         # norm_state=(state-min_state)/(max_state-min_state)
         # return norm_state
-        return state
+        return np.array(state)
 
 
     def best_action(self,state):
 
         norm_state=self.normalize_state(state)
-        state_tensor=torch.tensor(norm_state)
+        state_tensor=torch.tensor(norm_state,dtype=torch.float32)
         
         self.main_network.eval()
         prediction=self.main_network(state_tensor)

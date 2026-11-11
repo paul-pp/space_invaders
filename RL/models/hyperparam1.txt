@@ -1,0 +1,37 @@
+n_episodes=600
+start_eps=1.0
+batch_size=128
+update_weights_period=1000
+
+
+display_train=10
+
+
+env = SpaceInvadersEnv(screen_width=600,screen_height=600,Display_mode=False,max_steps_per_episode=10_000)
+
+
+agent=Agent_DQN(
+    env=env,
+
+    start_learning_rate=0.002,
+    start_factor_lr=1.0,
+    end_factor_lr=0.2,
+    total_iters_lr=int(n_episodes/2),
+    
+    start_epsilon=start_eps,
+    epsilon_decay = start_eps / (n_episodes/2),
+    final_epsilon=0.1,
+    gamma=0.99
+    )
+
+buffer = ReplayBuffer(capacity=100_000)
+
+
+		if color == 'red': self.value = 2
+		elif color == 'green': self.value = 4
+		else: self.value = 6
+
+        if pygame.sprite.spritecollide(laser,self.extra,True):
+					self.score += 10
+
+        vie=-70
