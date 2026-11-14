@@ -8,7 +8,7 @@ from env import SpaceInvadersEnv
 # env = SpaceInvadersEnv(screen_width=600,screen_height=600,Display_mode=True,max_steps_per_episode=10_000)
 
 
-# for episode in range(1):
+# for episode in range(5):
 #     current_observation = env.reset()
 #     episode_over = False
 
@@ -22,7 +22,7 @@ from env import SpaceInvadersEnv
 # env.close()
 
 
-n_episodes=600
+n_episodes=4000
 start_eps=1.0
 batch_size=128
 update_weights_period=1000
@@ -30,16 +30,26 @@ update_weights_period=1000
 
 display_train=10
 
-
-env = SpaceInvadersEnv(screen_width=600,screen_height=600,Display_mode=False,max_steps_per_episode=10_000)
+max_steps_per_episode=2000
+env = SpaceInvadersEnv(screen_width=600,
+                       screen_height=600,
+                       Display_mode=False,
+                       max_steps_per_episode=max_steps_per_episode,
+                       period_step=7,
+                       value_alien_red=1,
+                       value_alien_green=2,
+                       value_alien_else=3,
+                       value_extra=5,
+                       value_life=-10
+                       )
 
 
 agent=Agent_DQN(
     env=env,
 
-    start_learning_rate=0.002,
+    start_learning_rate=0.001,
     start_factor_lr=1.0,
-    end_factor_lr=0.2,
+    end_factor_lr=0.1,
     total_iters_lr=int(n_episodes/2),
     
     start_epsilon=start_eps,
@@ -58,6 +68,9 @@ Liste_epsilon=[]
 
 for episode in range(n_episodes):
     current_observation = env.reset()
+    if (env.length_queue[-1]>max_steps_per_episode):
+        print("sortie épisode, time exceeded")
+
     episode_over = False
 
     while not episode_over:
@@ -82,6 +95,7 @@ for episode in range(n_episodes):
             # Load the new weights on the target network each update_weights_period
             agent.network_copy.load_state_dict(agent.main_network.state_dict())
 
+
     epsilon=agent.update_epsilon()
     agent.scheduler.step()
 
@@ -91,9 +105,9 @@ for episode in range(n_episodes):
     if (episode != 0 and episode%display_train==0):
         current_lr = agent.optimizer.param_groups[0]['lr']
 
-        print(f"\nEpisode {episode} | LR = {current_lr:.6f}")
-        print(f"Episode {episode} | Reward = {np.array(env.return_queue[-display_train:]).mean():.6f}")
-        print(f"Episode mean length: {np.array(env.length_queue)[-display_train:].mean()}")
+        # print(f"\nEpisode {episode} | LR = {current_lr:.6f}")
+        print(f" ---- Episode {episode} ---- Reward = {np.array(env.return_queue[-display_train:]).mean():.2f}")
+        print(f"length: {np.array(env.length_queue)[-display_train:].mean()}")
 
 
 agent.save_network("model_space")

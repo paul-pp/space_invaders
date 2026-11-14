@@ -6,12 +6,28 @@ from Game import Game, CRT
 
 
 class SpaceInvadersEnv:
-    def __init__(self, screen_width,screen_height,Display_mode,max_steps_per_episode):
+    def __init__(self, screen_width,screen_height,Display_mode,max_steps_per_episode,period_step,
+                value_alien_red,
+                value_alien_green,
+                value_alien_else,
+                value_extra,
+                value_life):
+        
         self.screen_width=screen_width
         self.screen_height=screen_height
         self.Display_mode=Display_mode
         self.max_steps_per_episode=max_steps_per_episode
         self.period_event_ALIENLASER=75
+        self.period_step=period_step
+
+
+        self.value_alien_red=value_alien_red
+        self.value_alien_green=value_alien_green
+        self.value_alien_else=value_alien_else
+        self.value_extra=value_extra
+        self.value_life=value_life
+
+
 
         pygame.init()
         if Display_mode:
@@ -27,7 +43,12 @@ class SpaceInvadersEnv:
 
 
         self.tot_reward=0
-        self.game = Game(self.screen_width,self.screen_height,self.screen,self.Display_mode)
+        self.game = Game(self.screen_width,self.screen_height,self.screen,self.Display_mode,
+                        value_alien_red=value_alien_red,
+                        value_alien_green=value_alien_green,
+                        value_alien_else=value_alien_else,
+                        value_extra=value_extra,
+                        value_life=value_life)
         self.ep_step=0
 
         self.observation_space=np.array(self.get_state())
@@ -38,7 +59,12 @@ class SpaceInvadersEnv:
         self.length_queue.append(self.ep_step)
 
         self.tot_reward=0
-        self.game = Game(self.screen_width,self.screen_height,self.screen,self.Display_mode)
+        self.game = Game(self.screen_width,self.screen_height,self.screen,self.Display_mode,
+                         value_alien_red=self.value_alien_red,
+                        value_alien_green=self.value_alien_green,
+                        value_alien_else=self.value_alien_else,
+                        value_extra=self.value_extra,
+                        value_life=self.value_life)
         self.ep_step=0
         return self.get_state()
 
@@ -51,26 +77,36 @@ class SpaceInvadersEnv:
         """
         ### Specifique au jeu ####
         self.ep_step+=1
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-        if (self.ep_step%self.period_event_ALIENLASER == 0):
-            self.game.alien_shoot()
-        
-        if self.Display_mode:
-            self.screen.fill((30,30,30))
-        ### Specifique au jeu ####
 
-        state, reward, done=self.game.step(action)
+        for _ in range(self.period_step):
+            reward=0
+            done=False
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+            if (self.ep_step%self.period_event_ALIENLASER == 0):
+                self.game.alien_shoot()
+            
+            if self.Display_mode:
+                self.screen.fill((30,30,30))
+            ### Specifique au jeu ####
 
-        if (self.ep_step>self.max_steps_per_episode):
-            print("sortie épisode, time exceeded")
+            state, r, d=self.game.step(action)
+            # print('r',r)
+
+            reward+=r
+            if d : 
+                done=True
+
+        # if (self.ep_step>self.max_steps_per_episode):
+        #     print("sortie épisode, time exceeded")
 
         if self.Display_mode:
             pygame.display.flip()
 
         self.tot_reward+=reward
+        # print(' ')
 
         return state, reward, done
     

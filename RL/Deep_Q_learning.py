@@ -41,7 +41,9 @@ class Agent_DQN():
             state_dict = torch.load(main_neural_network_directory)
             self.main_network.load_state_dict(state_dict)
 
-        self.criterion = torch.nn.MSELoss(reduction='mean')
+        # self.criterion = torch.nn.MSELoss(reduction='mean')
+        self.criterion = torch.nn.SmoothL1Loss(reduction='mean')
+
         if (start_learning_rate):
             self.optimizer = torch.optim.Adam(self.main_network.parameters(), lr=start_learning_rate)
             self.scheduler = torch.optim.lr_scheduler.LinearLR(
@@ -159,6 +161,12 @@ class Agent_DQN():
         loss = self.criterion(q_values, y.detach())
         self.optimizer.zero_grad()
         loss.backward()
+
+        torch.nn.utils.clip_grad_norm_(
+            self.main_network.parameters(),
+            max_norm=10
+        )
+        
         self.optimizer.step()
 
         return loss.item()
