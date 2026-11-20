@@ -78,14 +78,14 @@ class SpaceInvadersEnv:
         ### Specifique au jeu ####
         self.ep_step+=1
 
-        for _ in range(self.period_step):
+        for mini_step in range(self.period_step):
             reward=0
             done=False
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-            if (self.ep_step%self.period_event_ALIENLASER == 0):
+            if (((self.ep_step*self.period_step + mini_step) % self.period_event_ALIENLASER) == 0):
                 self.game.alien_shoot()
             
             if self.Display_mode:
@@ -99,11 +99,12 @@ class SpaceInvadersEnv:
             if d : 
                 done=True
 
+            if self.Display_mode:
+                pygame.display.flip()
+
         # if (self.ep_step>self.max_steps_per_episode):
         #     print("sortie épisode, time exceeded")
 
-        if self.Display_mode:
-            pygame.display.flip()
 
         self.tot_reward+=reward
         # print(' ')
